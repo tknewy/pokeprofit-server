@@ -1,0 +1,27 @@
+# Render.com deployment configuration
+# ─────────────────────────────────────────────────────────────────
+# This file tells Render how to build and run the PokéProfit server.
+# Once deployed you get a stable URL like:
+#   https://pokeprofit-server.onrender.com
+#
+# Free tier notes:
+#   - Spins down after 15 min of inactivity (first request after idle
+#     takes ~30 seconds to wake up). Upgrade to Starter ($7/mo) to
+#     keep it always-on.
+#   - 750 free hours/month — enough for one always-running service.
+# ─────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: pokeprofit-server
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: PORT
+        value: 10000          # Render assigns this port automatically
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGINS  # Comma-separated list of domains allowed to call this API
+        value: "*"            # Change to your domain, e.g. https://mysite.com
