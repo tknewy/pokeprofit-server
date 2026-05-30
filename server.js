@@ -230,6 +230,27 @@ app.get('/api/debug', async (_req, res) => {
   }
 });
 
+app.get('/api/debug/set', async (req, res) => {
+  try {
+    const setName = req.query.name || 'Prismatic Evolutions';
+    const groups  = await getGroups();
+    const group   = groups.find(g => g.name && g.name.toLowerCase().includes(setName.toLowerCase()));
+    if (!group) return res.status(404).json({ success: false, error: 'Set not found', setName });
+    const { products, prices } = await getSetData(group.groupId);
+    const sampleProduct = products[0] || {};
+    const samplePrice   = prices[0]   || {};
+    res.json({
+      success: true, setName: group.name, groupId: group.groupId,
+      productCount: products.length, priceCount: prices.length,
+      productKeys: Object.keys(sampleProduct),
+      priceKeys:   Object.keys(samplePrice),
+      sampleProduct, samplePrice,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/api/search', async (req, res) => {
   try {
     const groups = await getGroups();
