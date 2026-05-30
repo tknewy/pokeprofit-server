@@ -245,14 +245,31 @@ app.get('/api/debug/set', async (req, res) => {
     const group   = groups.find(g => g.name && g.name.toLowerCase().includes(setName.toLowerCase()));
     if (!group) return res.status(404).json({ success: false, error: 'Set not found', setName });
     const { products, prices } = await getSetData(group.groupId);
-    const sampleProduct = products[0] || {};
-    const samplePrice   = prices[0]   || {};
+
+    // Build price map
+    const priceMap = {};
+    for (const row of prices) {
+      const id = String(row.productId);
+      const mp = parseFloat(row.marketPrice) || parseFloat(row.midPrice) || 0;
+      if (!priceMap[id] || mp > priceMap[id]) priceMap[id] = mp;
+    }
+
+    // Sample 10 cards with their extracted rarity + price
+    const sample = products.slice(0, 20).map(p => ({
+      name: p.name,
+      productId: p.productId,
+      rarity: getRarity(p),
+      price: priceMap[String(p.productId)] || 0,
+      extendedDataIsArray: Array.isArray(p.extendedData),
+      extendedDataLength: Array.isArray(p.extendedData) ? p.extendedData.length : null,
+      extendedDataNames: Array.isArray(p.extendedData) ? p.extendedData.map(x => x.name) : null,
+    }));
+
     res.json({
-      success: true, setName: group.name, groupId: group.groupId,
+      success: true, setName: group.name,
       productCount: products.length, priceCount: prices.length,
-      productKeys: Object.keys(sampleProduct),
-      priceKeys:   Object.keys(samplePrice),
-      sampleProduct, samplePrice,
+      priceMapSize: Object.keys(priceMap).length,
+      sample,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
