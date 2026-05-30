@@ -254,15 +254,21 @@ app.get('/api/debug/set', async (req, res) => {
       if (!priceMap[id] || mp > priceMap[id]) priceMap[id] = mp;
     }
 
-    // Sample 10 cards with their extracted rarity + price
-    const sample = products.slice(0, 20).map(p => ({
+    // Find first 5 products that have a Rarity field
+    const withRarity = products.filter(p =>
+      Array.isArray(p.extendedData) && p.extendedData.some(x => x.name === 'Rarity')
+    ).slice(0, 5).map(p => ({
       name: p.name,
       productId: p.productId,
       rarity: getRarity(p),
       price: priceMap[String(p.productId)] || 0,
-      extendedDataIsArray: Array.isArray(p.extendedData),
-      extendedDataLength: Array.isArray(p.extendedData) ? p.extendedData.length : null,
-      extendedDataNames: Array.isArray(p.extendedData) ? p.extendedData.map(x => x.name) : null,
+      extendedDataNames: p.extendedData.map(x => x.name),
+    }));
+    // Also show first product without rarity for comparison
+    const sample = withRarity.length > 0 ? withRarity : products.slice(0, 3).map(p => ({
+      name: p.name, productId: p.productId, rarity: getRarity(p),
+      price: priceMap[String(p.productId)] || 0,
+      extendedDataNames: Array.isArray(p.extendedData) ? p.extendedData.map(x => x.name) : [],
     }));
 
     res.json({
