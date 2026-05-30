@@ -43,14 +43,16 @@ function parseCSV(text) {
   });
 }
 
-async function fetchCSV(url) {
+async function fetchData(url) {
   const res = await axios.get(url, { headers: { 'User-Agent': 'PokéProfit-API/4.0' }, timeout: 20000 });
+  // TCGCSV /groups returns a JSON array; /products and /prices return CSV text
+  if (Array.isArray(res.data)) return res.data;
   return parseCSV(String(res.data));
 }
 
 async function getGroups() {
   if (groupsCache && Date.now() - groupsCachedAt < GROUP_TTL) return groupsCache;
-  groupsCache = await fetchCSV(TCGCSV + '/groups');
+  groupsCache = await fetchData(TCGCSV + '/groups');
   groupsCachedAt = Date.now();
   return groupsCache;
 }
@@ -59,8 +61,8 @@ async function getSetData(groupId) {
   const entry = setCache[groupId];
   if (entry && Date.now() - entry.cachedAt < SET_TTL) return entry;
   const [products, prices] = await Promise.all([
-    fetchCSV(TCGCSV + '/' + groupId + '/products'),
-    fetchCSV(TCGCSV + '/' + groupId + '/prices'),
+    fetchData(TCGCSV + '/' + groupId + '/products'),
+    fetchData(TCGCSV + '/' + groupId + '/prices'),
   ]);
   setCache[groupId] = { products, prices, cachedAt: Date.now() };
   return setCache[groupId];
@@ -220,13 +222,8 @@ app.get('/api/ev', evLimiter, async (req, res) => {
 
 app.get('/api/debug', async (_req, res) => {
   try {
-    const axios2 = require('axios');
-    const raw = await axios2.get('https://tcgcsv.com/tcgplayer/3/groups', {
-      headers: { 'User-Agent': 'PokéProfit-API/4.0' }, timeout: 20000
-    });
-    const text = String(raw.data);
-    const lines = text.split('\n').slice(0, 5);
-    res.json({ success: true, firstLines: lines });
+    const groups = await fetchData(TCGCSV + '/groups');
+    res.json({ success: true, count: groups.length, sample: groups.slice(0, 3) });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
