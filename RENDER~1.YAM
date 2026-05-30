@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: pokeprofit-server
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: "*"

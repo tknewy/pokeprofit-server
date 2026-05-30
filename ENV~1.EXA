@@ -1,0 +1,6 @@
+# No API key or credentials needed!
+# This server fetches public data from TCGCSV.com.
+# Just run start.bat and you're good to go.
+
+# Optional: change the port if 3001 is already in use
+PORT=3001
