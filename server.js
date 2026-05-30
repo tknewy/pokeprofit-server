@@ -254,22 +254,19 @@ app.get('/api/debug/set', async (req, res) => {
       if (!priceMap[id] || mp > priceMap[id]) priceMap[id] = mp;
     }
 
-    // Find first 5 products that have a Rarity field
-    const withRarity = products.filter(p =>
-      Array.isArray(p.extendedData) && p.extendedData.some(x => x.name === 'Rarity')
-    ).slice(0, 5).map(p => ({
-      name: p.name,
-      productId: p.productId,
-      rarity: getRarity(p),
-      price: priceMap[String(p.productId)] || 0,
-      extendedDataNames: p.extendedData.map(x => x.name),
-    }));
-    // Also show first product without rarity for comparison
-    const sample = withRarity.length > 0 ? withRarity : products.slice(0, 3).map(p => ({
-      name: p.name, productId: p.productId, rarity: getRarity(p),
-      price: priceMap[String(p.productId)] || 0,
-      extendedDataNames: Array.isArray(p.extendedData) ? p.extendedData.map(x => x.name) : [],
-    }));
+    // Tally all unique rarities found across the whole set
+    const rarityCounts = {};
+    for (const p of products) {
+      const r = getRarity(p);
+      if (r) rarityCounts[r] = (rarityCounts[r] || 0) + 1;
+    }
+    // Find 3 cards with highest prices that have a rarity
+    const expensiveCards = products
+      .filter(p => getRarity(p))
+      .map(p => ({ name: p.name, rarity: getRarity(p), price: priceMap[String(p.productId)] || 0 }))
+      .sort((a, b) => b.price - a.price)
+      .slice(0, 5);
+    const sample = { rarityCounts, expensiveCards };
 
     res.json({
       success: true, setName: group.name,
