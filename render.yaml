@@ -10,3 +10,5 @@ services:
         value: production
       - key: ALLOWED_ORIGINS
         value: "*"
+      - key: NODE_VERSION
+        value: "20.11.0"
