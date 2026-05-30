@@ -45,7 +45,7 @@ function parseCSV(text) {
 
 async function fetchCSV(url) {
   const res = await axios.get(url, { headers: { 'User-Agent': 'PokéProfit-API/4.0' }, timeout: 20000 });
-  return parseCSV(res.data);
+  return parseCSV(String(res.data));
 }
 
 async function getGroups() {
