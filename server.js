@@ -104,15 +104,23 @@ const EFFECTIVE_RATES = {
 function getRarity(row) {
   if (row['Rarity']) return row['Rarity'];
   if (row['rarity']) return row['rarity'];
-  const raw = String(row['extendedData'] || row['ExtendedData'] || '');
-  if (raw && raw !== 'undefined') {
-    try {
-      const arr = JSON.parse(raw);
-      const e = arr.find(x => x.name === 'Rarity' || x.Name === 'Rarity');
+  const extData = row['extendedData'] || row['ExtendedData'];
+  if (extData) {
+    // Already parsed as a JS array (JSON response from TCGCSV)
+    if (Array.isArray(extData)) {
+      const e = extData.find(x => (x.name || x.Name || '') === 'Rarity');
       if (e) return (e.value || e.Value || '').trim();
-    } catch (_) {}
-    const m = raw.match(/Rarity[:\s]+([^|,\n"]+)/i);
-    if (m) return m[1].trim();
+    } else {
+      // Fallback: string form (CSV)
+      const raw = String(extData);
+      try {
+        const arr = JSON.parse(raw);
+        const e = arr.find(x => (x.name || x.Name || '') === 'Rarity');
+        if (e) return (e.value || e.Value || '').trim();
+      } catch (_) {}
+      const m = raw.match(/Rarity[:\s]+([^|,\n"]+)/i);
+      if (m) return m[1].trim();
+    }
   }
   return null;
 }
@@ -120,7 +128,7 @@ function getRarity(row) {
 function calculateEV(products, priceMap) {
   const rarityCount = {};
   for (const card of products) {
-    const price = priceMap[card.productId] || 0;
+    const price = priceMap[String(card.productId)] || 0;
     if (!price) continue;
     const rarity = getRarity(card);
     if (!rarity) continue;
@@ -135,7 +143,7 @@ function calculateEV(products, priceMap) {
   const breakdown = {};
 
   for (const card of products) {
-    const price = priceMap[card.productId] || 0;
+    const price = priceMap[String(card.productId)] || 0;
     const rarity = getRarity(card);
     if (!rarity || !price) { skippedCards++; continue; }
     const tier = RARITY_TIER[rarity];
@@ -199,7 +207,7 @@ app.get('/api/ev', evLimiter, async (req, res) => {
 
     const priceMap = {};
     for (const row of prices) {
-      const id = row.productId;
+      const id = String(row.productId);
       const mp = parseFloat(row.marketPrice) || parseFloat(row.midPrice) || 0;
       if (!priceMap[id] || mp > priceMap[id]) priceMap[id] = mp;
     }
