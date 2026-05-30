@@ -222,8 +222,16 @@ app.get('/api/ev', evLimiter, async (req, res) => {
 
 app.get('/api/debug', async (_req, res) => {
   try {
-    const groups = await fetchData(TCGCSV + '/groups');
-    res.json({ success: true, count: groups.length, sample: groups.slice(0, 3) });
+    const raw = await axios.get(TCGCSV + '/groups', {
+      headers: { 'User-Agent': 'PokéProfit-API/4.0' }, timeout: 20000
+    });
+    const dataType  = typeof raw.data;
+    const isArray   = Array.isArray(raw.data);
+    const isObject  = !isArray && dataType === 'object' && raw.data !== null;
+    const rawStr    = String(raw.data).slice(0, 300);
+    const objKeys   = isObject ? Object.keys(raw.data).slice(0, 10) : null;
+    const firstItem = isArray ? raw.data[0] : (isObject ? raw.data[Object.keys(raw.data)[0]] : null);
+    res.json({ success: true, dataType, isArray, isObject, objKeys, firstItem, rawStr });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
