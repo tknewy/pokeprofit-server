@@ -104,8 +104,8 @@ const EFFECTIVE_RATES = {
 function getRarity(row) {
   if (row['Rarity']) return row['Rarity'];
   if (row['rarity']) return row['rarity'];
-  const raw = row['extendedData'] || row['ExtendedData'] || '';
-  if (raw) {
+  const raw = String(row['extendedData'] || row['ExtendedData'] || '');
+  if (raw && raw !== 'undefined') {
     try {
       const arr = JSON.parse(raw);
       const e = arr.find(x => x.name === 'Rarity' || x.Name === 'Rarity');
