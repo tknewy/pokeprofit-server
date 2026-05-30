@@ -216,6 +216,20 @@ app.get('/api/ev', evLimiter, async (req, res) => {
   }
 });
 
+
+app.get('/api/search', async (req, res) => {
+  try {
+    const groups = await getGroups();
+    const q = (req.query.q || '').toLowerCase();
+    const matches = q
+      ? groups.filter(g => g.name && g.name.toLowerCase().includes(q))
+      : groups.slice(0, 50);
+    res.json({ success: true, count: matches.length, sets: matches.map(g => ({ id: g.groupId, name: g.name })) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log('PokéProfit API v4 running at http://localhost:' + PORT);
 });
