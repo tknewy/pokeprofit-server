@@ -217,6 +217,21 @@ app.get('/api/ev', evLimiter, async (req, res) => {
 });
 
 
+
+app.get('/api/debug', async (_req, res) => {
+  try {
+    const axios2 = require('axios');
+    const raw = await axios2.get('https://tcgcsv.com/tcgplayer/3/groups', {
+      headers: { 'User-Agent': 'PokéProfit-API/4.0' }, timeout: 20000
+    });
+    const text = String(raw.data);
+    const lines = text.split('\n').slice(0, 5);
+    res.json({ success: true, firstLines: lines });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/api/search', async (req, res) => {
   try {
     const groups = await getGroups();
